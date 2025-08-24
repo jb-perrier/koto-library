@@ -1,3 +1,5 @@
+#![allow(clippy::result_unit_err)]
+
 use std::{
     ffi::{CStr, c_char},
     os::raw::c_void,
@@ -38,7 +40,6 @@ pub unsafe extern "C" fn koto_create_str(module: *mut c_void, value: *const c_ch
  */
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn koto_create_number(module: *mut c_void, value: f64) -> ValueId {
-    // Safety checks
     if module.is_null() {
         return -1;
     }
@@ -69,22 +70,24 @@ pub unsafe extern "C" fn koto_map_insert(
     map: ValueId,
     key: *const c_char,
     value: ValueId,
-) -> bool {
-    // Safety checks
+) -> isize {
     if module.is_null() || key.is_null() {
-        return false;
+        return -1;
     }
 
     let module = unsafe { &mut *(module as *mut ModuleBuilder) };
     let c_str = unsafe { CStr::from_ptr(key) };
 
-    match c_str.to_str() {
-        Ok(key_str) => module.map_insert(map, key_str, value),
-        Err(_) => false, // Invalid UTF-8 in key
-    }
-}
+    let Ok(key_str) = c_str.to_str() else {
+        return -1;
+    };
 
-// fn koto_create_native_function(function: NativeFunction) -> ValueId;
+    if module.map_insert(map, key_str, value).is_err() {
+        return -1;
+    }
+
+    1
+}
 
 #[derive(Default)]
 pub struct ModuleBuilder {
@@ -107,20 +110,20 @@ impl ModuleBuilder {
         self.values.insert(KValue::Map(KMap::default())) as ValueId
     }
 
-    pub fn map_insert(&mut self, map_id: ValueId, key: &str, value_id: ValueId) -> bool {
+    pub fn map_insert(&mut self, map_id: ValueId, key: &str, value_id: ValueId) -> Result<(), ()> {
         // Get the value to insert
         let Some(value) = self.values.try_remove(value_id as usize) else {
-            return false;
+            return Err(());
         };
         
         // Get mutable reference to the map and insert the value
         if let Some(KValue::Map(map)) = self.values.get_mut(map_id as usize) {
             map.insert(key, value);
-            true
+            Ok(())
         } else {
             // Put the value back if map access failed
             self.values.insert(value);
-            false
+            Err(())
         }
     }
 
