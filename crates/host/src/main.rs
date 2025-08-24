@@ -3,6 +3,7 @@ use builder::ValueId;
 use koto::prelude::*;
 use libloading::Library;
 use std::env;
+use std::ffi::c_int;
 use std::fs;
 use std::process;
 
@@ -48,7 +49,7 @@ fn main() {
         };
 
         let load_func = unsafe {
-            lib.get::<unsafe extern "C" fn(*mut ModuleBuilder, ValueId) -> ()>(b"koto_load")
+            lib.get::<unsafe extern "C" fn(*mut ModuleBuilder, ValueId) -> c_int>(b"koto_load")
         };
         let Ok(load_func) = load_func else {
             return Err(format!(
