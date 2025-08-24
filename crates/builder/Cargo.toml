@@ -1,0 +1,11 @@
+[package]
+name = "builder"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+koto = "0.16.0"
+slab = "0.4.11"

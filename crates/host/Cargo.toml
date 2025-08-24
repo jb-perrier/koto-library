@@ -1,0 +1,9 @@
+[package]
+name = "host"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+koto = "0.16.0"
+libloading = "0.8.8"
+builder = { path = "../builder" }
