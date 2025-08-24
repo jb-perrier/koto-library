@@ -1,6 +1,8 @@
 # koto-library
 
-POC loading dynamic lirbary in the Koto runtime using a C interface.
+POC for loading dynamic library in the Koto runtime using a C interface.
+
+Require **Clang**
 
 ## Usage
 
