@@ -2,7 +2,7 @@
 
 POC for loading dynamic library in the Koto runtime using a C interface.
 
-Require **Clang**
+Require **Clang**.
 
 ## Usage
 
