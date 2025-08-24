@@ -70,20 +70,20 @@ pub unsafe extern "C" fn koto_map_insert(
     map: ValueId,
     key: *const c_char,
     value: ValueId,
-) -> isize {
+) -> usize {
     if module.is_null() || key.is_null() {
-        return -1;
+        return 0;
     }
 
     let module = unsafe { &mut *(module as *mut ModuleBuilder) };
     let c_str = unsafe { CStr::from_ptr(key) };
 
     let Ok(key_str) = c_str.to_str() else {
-        return -1;
+        return 0;
     };
 
     if module.map_insert(map, key_str, value).is_err() {
-        return -1;
+        return 0;
     }
 
     1

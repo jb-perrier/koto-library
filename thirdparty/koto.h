@@ -24,7 +24,7 @@ typedef void* Module;
 KOTO_API ValueId koto_create_str(Module module, const char* value);
 KOTO_API ValueId koto_create_number(Module module, double value);
 KOTO_API ValueId koto_create_map(Module module);
-KOTO_API bool koto_map_insert(Module module, ValueId map, const char* key, ValueId value);
+KOTO_API size_t koto_map_insert(Module module, ValueId map, const char* key, ValueId value);
 
 #ifdef __cplusplus
 }
