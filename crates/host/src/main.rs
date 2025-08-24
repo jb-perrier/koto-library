@@ -1,9 +1,9 @@
+use builder::KotoInterface;
+use builder::LoadFunc;
 use builder::ModuleBuilder;
-use builder::ValueId;
 use koto::prelude::*;
 use libloading::Library;
 use std::env;
-use std::ffi::c_int;
 use std::fs;
 use std::process;
 
@@ -49,7 +49,7 @@ fn main() {
         };
 
         let load_func = unsafe {
-            lib.get::<unsafe extern "C" fn(*mut ModuleBuilder, ValueId) -> c_int>(b"koto_load")
+            lib.get::<LoadFunc>(b"koto_load")
         };
         let Ok(load_func) = load_func else {
             return Err(format!(
@@ -59,9 +59,13 @@ fn main() {
         };
 
         let mut builder = ModuleBuilder::new();
-        let root_map = builder.create_map();
-        unsafe { load_func(&mut builder, root_map) };
-        let Some(module_map) = builder.take_value(root_map) else {
+        let koto_interface = KotoInterface::new();
+        let return_value = unsafe {
+            let koto_interface = &koto_interface as *const KotoInterface as *mut KotoInterface;
+            let module_builder = &mut builder as *mut ModuleBuilder;
+            load_func(koto_interface, module_builder)
+        };
+        let Some(module_map) = builder.take_value(return_value) else {
             return Err("Failed to retrieve the module map".into());
         };
         Ok(module_map)

@@ -9,7 +9,5 @@ cd - > /dev/null
 
 # Compile C code to shared object
 cd thirdparty
-clang -shared -fPIC -o ../target/debug/libthirdparty.so lib.c ../target/debug/libbuilder.a -ldl -lpthread -lm
+clang -shared -fPIC -o ../target/debug/libthirdparty.so lib.c -ldl -lpthread -lm
 cd - > /dev/null
-
-echo "Done!"

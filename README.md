@@ -22,4 +22,4 @@ Require **Clang**.
 ### Limitations
 - The **builder** crate is linked statically with the **third party library**, can be an issue if the **host** as not be compiled with the same rust version / flags than the **builder**.
 Can be solved by passing a struct of function to **koto_load** so it directly comes from the **host**.
-- Implement an interface for accessing **CallingContext** in order to use native function.
+- Unsafe grounds ... especially aliasing rules, needs to be reviewed carefully.

@@ -1,3 +1,2 @@
 map = load_library "./target/debug/libthirdparty"
-
 print map
