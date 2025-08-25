@@ -6,8 +6,8 @@ ResultCode add(const KotoInterface *koto, CallContext *ctx) {
 		  return FAILURE;
   	}
 
-  	if (koto->call.arg_type(ctx, 0) != KOTO_TYPE_NUMBER ||
-  	koto->call.arg_type(ctx, 1) != KOTO_TYPE_NUMBER) {
+  	if (koto->call.arg_type(ctx, 0) != KOTO_TYPE_NUMBER
+		|| koto->call.arg_type(ctx, 1) != KOTO_TYPE_NUMBER) {
 		  return FAILURE;
   	}
 
