@@ -3,11 +3,12 @@ use std::{
     ffi::{c_char, c_int, CStr},
     os::raw::c_void,
 };
-use koto::{
-    parser::KString,
-    runtime::{CallContext, KMap, KNumber, KValue},
-};
-use slab::Slab;
+use koto::
+    runtime::{CallContext, KValue}
+;
+
+mod module_builder;
+pub use module_builder::*;
 
 #[repr(C)]
 pub struct KotoInterface {
@@ -19,7 +20,7 @@ pub struct KotoInterface {
     map_insert: unsafe extern "C" fn(*mut c_void, ValueId, *const c_char, ValueId) -> Bool,
 
     // Call Context
-    // arg_count: unsafe extern "C" fn(*mut c_void) -> u32,
+    arg_count: unsafe extern "C" fn(*mut c_void) -> u32,
     // arg_type: unsafe extern "C" fn(*mut c_void, u32) -> u32,
     // arg_string: unsafe extern "C" fn(*mut c_void, u32) -> *const c_char,
     // arg_number: unsafe extern "C" fn(*mut c_void, u32) -> f64,
@@ -35,7 +36,7 @@ impl KotoInterface {
             create_bool: koto_create_bool,
             create_map: koto_create_map,
             map_insert: koto_map_insert,
-
+            arg_count: call_ctx_arg_count,
         }
     }
 }
@@ -151,45 +152,4 @@ pub unsafe extern "C" fn call_ctx_arg_count(ctx: *mut c_void) -> u32 {
     ctx.args().len() as u32
 }
 
-#[derive(Default)]
-pub struct ModuleBuilder {
-    pub values: Slab<KValue>,
-}
 
-impl ModuleBuilder {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    pub fn create_str(&mut self, value: &str) -> ValueId {
-        self.values.insert(KValue::Str(KString::from(value))) as ValueId
-    }
-    pub fn create_number(&mut self, value: f64) -> ValueId {
-        self.values.insert(KValue::Number(KNumber::F64(value))) as ValueId
-    }
-
-    pub fn create_map(&mut self) -> ValueId {
-        self.values.insert(KValue::Map(KMap::default())) as ValueId
-    }
-
-    pub fn map_insert(&mut self, map_id: ValueId, key: &str, value_id: ValueId) -> Result<(), ()> {
-        // Get the value to insert
-        let Some(value) = self.values.try_remove(value_id as usize) else {
-            return Err(());
-        };
-        
-        // Get mutable reference to the map and insert the value
-        if let Some(KValue::Map(map)) = self.values.get_mut(map_id as usize) {
-            map.insert(key, value);
-            Ok(())
-        } else {
-            // Put the value back if map access failed
-            self.values.insert(value);
-            Err(())
-        }
-    }
-
-    pub fn take_value(&mut self, id: ValueId) -> Option<KValue> {
-        self.values.try_remove(id as usize)
-    }
-}
