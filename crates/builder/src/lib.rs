@@ -46,9 +46,9 @@ impl Default for KotoInterface {
     }
 }
 
-pub type LoadFunc = unsafe extern "C" fn(*const KotoInterface, *mut ModuleBuilder) -> ValueId;
+pub type LoadFunc = unsafe extern "C" fn(*const KotoInterface, module: *mut ModuleBuilder) -> ValueId;
 pub type NativeFunction = extern "C" fn(*const KotoInterface, ctx: *mut CallContext) -> Bool;
-pub type ValueId = c_int; // negative when error
+pub type ValueId = c_int;
 pub type Bool = c_int;
 
 /**
