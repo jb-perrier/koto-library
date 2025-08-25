@@ -48,14 +48,12 @@ fn main() {
             }
         };
 
-        let load_func = unsafe {
-            lib.get::<LoadFunc>(b"koto_load")
-        };
+        let load_func = unsafe { lib.get::<LoadFunc>(b"koto_load") };
+
         let Ok(load_func) = load_func else {
-            return Err(format!(
-                "The library '{path}' does not contain a 'koto_load' function"
-            )
-            .into());
+            return Err(
+                format!("The library '{path}' does not contain a 'koto_load' function").into(),
+            );
         };
 
         let mut builder = ModuleBuilder::new();
@@ -65,10 +63,14 @@ fn main() {
             let module_builder = &mut builder as *mut ModuleBuilder;
             load_func(koto_interface, module_builder)
         };
-        let Some(module_map) = builder.take_value(return_value) else {
+
+        let Some(value) = builder.take_value(return_value) else {
             return Err("Failed to retrieve the module map".into());
         };
-        Ok(module_map)
+
+        // DO NOT REMOVE, otherwise the library will be dropped and calling function pointers from this lib will crash
+        std::mem::forget(lib);
+        Ok(value)
     });
 
     match koto.compile_and_run(&script_content) {
