@@ -9,11 +9,11 @@ use slab::Slab;
 use crate::{Bool, FAILURE, ForeignNativeFunction, ResultCode, SUCCESS, ValueId, to_koto_function};
 
 #[derive(Default)]
-pub struct ModuleBuilder {
+pub struct Values {
     pub values: Slab<KValue>,
 }
 
-impl ModuleBuilder {
+impl Values {
     pub fn new() -> Self {
         Default::default()
     }
@@ -58,7 +58,7 @@ impl ModuleBuilder {
 }
 
 #[repr(C)]
-pub struct ModuleBuilderInterface {
+pub struct ValuesInterface {
     create_str: unsafe extern "C" fn(*mut c_void, *const std::os::raw::c_char) -> ValueId,
     create_number: unsafe extern "C" fn(*mut c_void, f64) -> ValueId,
     create_bool: unsafe extern "C" fn(*mut c_void, Bool) -> ValueId,
@@ -67,7 +67,7 @@ pub struct ModuleBuilderInterface {
     map_insert: unsafe extern "C" fn(*mut c_void, ValueId, *const c_char, ValueId) -> ResultCode,
 }
 
-impl ModuleBuilderInterface {
+impl ValuesInterface {
     pub fn new() -> Self {
         Self {
             create_str,
@@ -80,7 +80,7 @@ impl ModuleBuilderInterface {
     }
 }
 
-impl Default for ModuleBuilderInterface {
+impl Default for ValuesInterface {
     fn default() -> Self {
         Self::new()
     }
@@ -90,15 +90,15 @@ impl Default for ModuleBuilderInterface {
  * # Safety
  */
 #[unsafe(no_mangle)]
-unsafe extern "C" fn create_str(module: *mut c_void, value: *const c_char) -> ValueId {
-    if module.is_null() || value.is_null() {
+unsafe extern "C" fn create_str(values: *mut c_void, value: *const c_char) -> ValueId {
+    if values.is_null() || value.is_null() {
         return 0;
     }
 
-    let module = unsafe { &mut *(module as *mut ModuleBuilder) };
+    let values = unsafe { &mut *(values as *mut Values) };
     let c_str = unsafe { CStr::from_ptr(value) };
     match c_str.to_str() {
-        Ok(str_val) => module.create_str(str_val),
+        Ok(str_val) => values.create_str(str_val),
         Err(_) => 0,
     }
 }
@@ -107,54 +107,54 @@ unsafe extern "C" fn create_str(module: *mut c_void, value: *const c_char) -> Va
  * # Safety
  */
 #[unsafe(no_mangle)]
-unsafe extern "C" fn create_bool(module: *mut c_void, value: c_char) -> ValueId {
-    if module.is_null() {
+unsafe extern "C" fn create_bool(values: *mut c_void, value: c_char) -> ValueId {
+    if values.is_null() {
         return 0;
     }
 
-    let module = unsafe { &mut *(module as *mut ModuleBuilder) };
+    let values = unsafe { &mut *(values as *mut Values) };
     let bool_value = value != 0;
-    module.values.insert(KValue::Bool(bool_value)) as ValueId
+    values.values.insert(KValue::Bool(bool_value)) as ValueId
 }
 
 /**
  * # Safety
  */
 #[unsafe(no_mangle)]
-unsafe extern "C" fn create_number(module: *mut c_void, value: f64) -> ValueId {
-    if module.is_null() {
+unsafe extern "C" fn create_number(values: *mut c_void, value: f64) -> ValueId {
+    if values.is_null() {
         return 0;
     }
 
-    let module = unsafe { &mut *(module as *mut ModuleBuilder) };
-    module.create_number(value)
+    let values = unsafe { &mut *(values as *mut Values) };
+    values.create_number(value)
 }
 
 /**
  * # Safety
  */
 #[unsafe(no_mangle)]
-unsafe extern "C" fn create_native_function(module: *mut c_void, func: *mut c_void) -> ValueId {
-    if module.is_null() || func.is_null() {
+unsafe extern "C" fn create_native_function(values: *mut c_void, func: *mut c_void) -> ValueId {
+    if values.is_null() || func.is_null() {
         return -1;
     }
 
-    let module = unsafe { &mut *(module as *mut ModuleBuilder) };
+    let values = unsafe { &mut *(values as *mut Values) };
     let func: ForeignNativeFunction = unsafe { std::mem::transmute(func) };
-    unsafe { module.create_native_function(func) }
+    unsafe { values.create_native_function(func) }
 }
 
 /**
  * # Safety
  */
 #[unsafe(no_mangle)]
-unsafe extern "C" fn create_map(module: *mut c_void) -> ValueId {
-    if module.is_null() {
+unsafe extern "C" fn create_map(values: *mut c_void) -> ValueId {
+    if values.is_null() {
         return -1;
     }
 
-    let module = unsafe { &mut *(module as *mut ModuleBuilder) };
-    module.create_map()
+    let values = unsafe { &mut *(values as *mut Values) };
+    values.create_map()
 }
 
 /**
@@ -162,23 +162,23 @@ unsafe extern "C" fn create_map(module: *mut c_void) -> ValueId {
  */
 #[unsafe(no_mangle)]
 unsafe extern "C" fn map_insert(
-    module: *mut c_void,
+    values: *mut c_void,
     map: ValueId,
     key: *const c_char,
     value: ValueId,
 ) -> ResultCode {
-    if module.is_null() || key.is_null() {
+    if values.is_null() || key.is_null() {
         return FAILURE;
     }
 
-    let module = unsafe { &mut *(module as *mut ModuleBuilder) };
+    let values = unsafe { &mut *(values as *mut Values) };
     let c_str = unsafe { CStr::from_ptr(key) };
 
     let Ok(key_str) = c_str.to_str() else {
         return FAILURE;
     };
 
-    if module.map_insert(map, key_str, value).is_err() {
+    if values.map_insert(map, key_str, value).is_err() {
         return FAILURE;
     }
 

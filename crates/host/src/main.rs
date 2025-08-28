@@ -1,6 +1,6 @@
 use builder::KotoInterface;
 use builder::LoadFunc;
-use builder::ModuleBuilder;
+use builder::Values;
 use koto::prelude::*;
 use libloading::Library;
 use std::env;
@@ -56,16 +56,20 @@ fn main() {
             );
         };
 
-        let mut builder = ModuleBuilder::new();
+        let mut values = Values::new();
         let koto_interface = KotoInterface::new();
-        let return_value = unsafe {
+        let result = unsafe {
             let koto_interface = &koto_interface as *const KotoInterface as *mut KotoInterface;
-            let module_builder = &mut builder as *mut ModuleBuilder;
-            load_func(koto_interface, module_builder)
+            let values = &mut values as *mut Values;
+            load_func(koto_interface, values)
         };
 
-        let Some(value) = builder.take_value(return_value) else {
-            return Err("Failed to retrieve the module map".into());
+        if result.code == builder::FAILURE {
+            return Err("The library failed to load".into());
+        }
+
+        let Some(value) = values.take_value(result.value) else {
+            return Err("Failed to retrieve the return value".into());
         };
 
         // DO NOT REMOVE, otherwise the library will be dropped and calling function pointers from this lib will crash

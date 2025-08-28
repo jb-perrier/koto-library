@@ -9,7 +9,6 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-
 #ifdef _WIN32
 #define KOTO_API __declspec(dllexport)
 #else
@@ -28,12 +27,19 @@ typedef char Bool;
 #define TRUE 1
 #define FALSE 0
 
-typedef void Module;
+typedef void Values;
 typedef void CallContext;
 
 typedef int ResultCode;
 #define SUCCESS 1
 #define FAILURE 0
+
+typedef struct CallResult {
+  ResultCode code;
+  ValueId value;
+} CallResult;
+#define CALL_SUCCESS(var_value) ((CallResult){.code = SUCCESS, .value = var_value})
+#define CALL_FAILURE ((CallResult){.code = FAILURE, .value = -1})
 
 enum KotoValueType {
   KOTO_TYPE_NULL = 0,
@@ -43,23 +49,24 @@ enum KotoValueType {
 };
 
 // Forward declarations
-typedef struct ModuleBuilderInterface ModuleBuilderInterface;
+typedef struct ValuesInterface ValuesInterface;
 typedef struct CallContextInterface CallContextInterface;
 struct _KotoInterface;
 typedef struct _KotoInterface KotoInterface;
 
 // Koto Native Function
-typedef ResultCode (*ForeignNativeFunction)(const KotoInterface* koto, CallContext* ctx);
+typedef CallResult (*ForeignNativeFunction)(const KotoInterface *koto,
+                                            CallContext *ctx, Values* values);
 
-// Module Builder function types
-typedef ValueId (*ModuleBuilder_CreateStrFn)(void *module, const Str value);
-typedef ValueId (*ModuleBuilder_CreateNumberFn)(void *module, Number value);
-typedef ValueId (*ModuleBuilder_CreateBoolFn)(void *module, Bool value);
-typedef ValueId (*ModuleBuilder_CreateMapFn)(void *module);
-typedef ValueId (*ModuleBuilder_CreateNativeFunctionFn)(void *module,
-                                                        ForeignNativeFunction func);
-typedef ResultCode (*ModuleBuilder_MapInsertFn)(void *module, ValueId map,
-                                            const Str key, ValueId value);
+// Values function types
+typedef ValueId (*Values_CreateStrFn)(void *values, const Str value);
+typedef ValueId (*Values_CreateNumberFn)(void *values, Number value);
+typedef ValueId (*Values_CreateBoolFn)(void *values, Bool value);
+typedef ValueId (*Values_CreateMapFn)(void *values);
+typedef ValueId (*Values_CreateNativeFunctionFn)(void *values,
+                                                 ForeignNativeFunction func);
+typedef ResultCode (*Values_MapInsertFn)(void *values, ValueId map,
+                                         const Str key, ValueId value);
 
 // CallContext function types
 typedef unsigned int (*CallContext_ArgCountFn)(void *ctx);
@@ -69,27 +76,27 @@ typedef Number (*CallContext_ArgNumberFn)(void *ctx, unsigned int index);
 typedef void (*CallContext_ReturnStringFn)(void *ctx, const Str value);
 typedef void (*CallContext_ReturnNumberFn)(void *ctx, Number value);
 
-struct ModuleBuilderInterface {
-  ModuleBuilder_CreateStrFn create_str;
-  ModuleBuilder_CreateNumberFn create_number;
-  ModuleBuilder_CreateBoolFn create_bool;
-  ModuleBuilder_CreateMapFn create_map;
-  ModuleBuilder_CreateNativeFunctionFn create_native_function;
-  ModuleBuilder_MapInsertFn map_insert;
+struct ValuesInterface {
+  Values_CreateStrFn create_str;
+  Values_CreateNumberFn create_number;
+  Values_CreateBoolFn create_bool;
+  Values_CreateMapFn create_map;
+  Values_CreateNativeFunctionFn create_native_function;
+  Values_MapInsertFn map_insert;
 };
 
 struct CallContextInterface {
   CallContext_ArgCountFn arg_count;
   CallContext_ArgTypeFn arg_type;
-//   CallContext_ArgStringFn arg_string;
+  //   CallContext_ArgStringFn arg_string;
   CallContext_ArgNumberFn arg_number;
-//   CallContext_ReturnStringFn return_string;
+  //   CallContext_ReturnStringFn return_string;
   CallContext_ReturnNumberFn return_number;
 };
 
-// Main interface with nested modules
-typedef struct _KotoInterface{
-  ModuleBuilderInterface module;
+// Main interface with nested valuess
+typedef struct _KotoInterface {
+  ValuesInterface values;
   CallContextInterface call;
 } KotoInterface;
 
