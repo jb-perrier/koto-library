@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/host", "crates/builder"]
+members = ["crates/host", "crates/builder", "crates/wrapper"]
 
 [profile.dev]
 debug = true
