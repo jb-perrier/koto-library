@@ -1,0 +1,12 @@
+[package]
+name = "super_lib"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1.0.99"
+koto = "0.16.0"
+koto_clib = { path = "../koto_clib" }

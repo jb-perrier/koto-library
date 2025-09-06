@@ -1,5 +1,5 @@
 [package]
-name = "builder"
+name = "koto_clib"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,5 +7,6 @@ edition = "2024"
 crate-type = ["staticlib", "rlib"]
 
 [dependencies]
+anyhow = "1.0.99"
 koto = "0.16.0"
 slab = "0.4.11"

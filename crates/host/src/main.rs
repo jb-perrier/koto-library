@@ -1,6 +1,5 @@
-use builder::KotoInterface;
-use builder::LoadFunc;
-use builder::Values;
+use koto_clib::ValuesInterface;
+use koto_clib::{Values, LoadFunc};
 use koto::prelude::*;
 use libloading::Library;
 use std::env;
@@ -48,7 +47,7 @@ fn main() {
             }
         };
 
-        let load_func = unsafe { lib.get::<LoadFunc>(b"koto_load") };
+        let load_func = unsafe { lib.get::<LoadFunc>(b"koto_load_extern") };
 
         let Ok(load_func) = load_func else {
             return Err(
@@ -57,14 +56,13 @@ fn main() {
         };
 
         let mut values = Values::new();
-        let koto_interface = KotoInterface::new();
+        let mut values_interface = ValuesInterface::new(&mut values);
         let result = unsafe {
-            let koto_interface = &koto_interface as *const KotoInterface as *mut KotoInterface;
-            let values = &mut values as *mut Values;
-            load_func(koto_interface, values)
+            let ptr = &mut values_interface as *mut ValuesInterface;
+            load_func(ptr)
         };
 
-        if result.code == builder::FAILURE {
+        if result.code == koto_clib::FAILURE {
             return Err("The library failed to load".into());
         }
 

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/host", "crates/builder"]
+members = ["crates/host", "crates/koto_clib", "crates/super_lib"]
 
 [profile.dev]
 debug = true

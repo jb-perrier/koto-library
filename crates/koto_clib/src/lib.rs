@@ -1,6 +1,6 @@
 #![allow(clippy::result_unit_err)]
 use koto::runtime::KValue;
-use std::ffi::{c_char, c_int};
+use std::{ffi::{c_char, c_int}, marker::PhantomData};
 
 mod call_context;
 mod foreign_function;
@@ -10,11 +10,21 @@ pub use call_context::*;
 pub use foreign_function::*;
 pub use values::*;
 
-pub type LoadFunc = unsafe extern "C" fn(*const KotoInterface, *mut Values) -> CallResult;
+pub type LoadFunc = unsafe extern "C" fn(*mut ValuesInterface) -> CallResult;
 pub type ForeignNativeFunction =
-    unsafe extern "C" fn(*const KotoInterface, *mut CallContextWrapper, *mut Values) -> CallResult;
+    unsafe extern "C" fn(*mut CallContextInterface, *mut ValuesInterface) -> CallResult;
 pub type ValueId = c_int;
-pub type Bool = c_char;
+pub struct Value(pub ValueId);
+
+pub struct NumberRef {
+    id: ValueId,
+}
+
+
+pub trait ValueRef {
+    fn id(&self) -> ValueId;
+}
+
 pub type ResultCode = c_int;
 pub const SUCCESS: ResultCode = 1;
 pub const FAILURE: ResultCode = 0;
@@ -35,26 +45,5 @@ pub fn kvalue_to_uint(value: &KValue) -> ValueType {
         KValue::Number(_) => 2,
         KValue::Str(_) => 7,
         _ => 0,
-    }
-}
-
-#[repr(C)]
-pub struct KotoInterface {
-    values: ValuesInterface,
-    call: CallContextInterface,
-}
-
-impl KotoInterface {
-    pub fn new() -> Self {
-        Self {
-            values: ValuesInterface::new(),
-            call: CallContextInterface::new(),
-        }
-    }
-}
-
-impl Default for KotoInterface {
-    fn default() -> Self {
-        Self::new()
     }
 }
